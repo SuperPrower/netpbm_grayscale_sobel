@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include "netpbm_gs.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -35,27 +37,20 @@
  * Программа пишется под Linux, на С, с использованием Posix
  *
  *
- * 1. необходимо реализовать базовые операции работы с файлами данного
+ * [ ] 1. необходимо реализовать базовые операции работы с файлами данного
  * формата: как его прочитать, как изменить, сохранить.
- * Файл описываем структурой, память под матрицу выделяем динамически.
- * 2. Реализуем алгоритм преобразования изображения в черно-белое
- * 3. Реализуем оператор Собеля для получаемого черно-белого изображения
+ * [x] Файл описываем структурой, память под матрицу выделяем динамически.
+ * [ ] 2. Реализуем алгоритм преобразования изображения в черно-белое
+ * [ ] 3. Реализуем оператор Собеля для получаемого черно-белого изображения
  * https://en.wikipedia.org/wiki/Sobel_operator
- * 4. Добавить поддержку использования оператора Собеля в несколько потоков
+ * [ ] 4. Добавить поддержку использования оператора Собеля в несколько потоков
  * (thread) - количество задается в командной строке
- * 5. Выводим на экран время обработки изображения (нужен для сравнения
+ * [ ] 5. Выводим на экран время обработки изображения (нужен для сравнения
  * времени обработки в зависимости от количества потоков)
  *
  * Пункты 1-5 подразумевают, что приложение может иметь простой консольный
- * интерфейс;
- *
- * Дополнительно:
- * - приложение должно собираться при помощи Makefile;
- * - исходные коды должны находиться под системой контроля версий git и
- * содержать историю коммитов;
- * - (опционально) реализовать графический интерфейс используя QT с
- * возможностью отображения изображения
- *
+ * интерфейс; Опционально можно реализовать графический интерфейс используя QT
+ * с возможностью отображения изображения
  *
  * Вариант передачи:
  * - результат передаётся в виде ссылки на репозиторий размещённый на
@@ -63,9 +58,13 @@
  * также описание тестов (как проверить)
  *
  * Вариант запуска программы:
- *  > my_converter -i my_photo.ppm -r my_photo_sobel.ppm -p 10
+ * $ ./my_converter -i my_photo.ppm -r my_photo_sobel.ppm -p 10
  * Time of algorithm execution: 3.2 ms
  */
+
+void print_usage(char* binary_name) {
+	printf("Usage: %s\n", binary_name);
+}
 
 int main(int argc, char *argv[])
 {
@@ -77,12 +76,13 @@ int main(int argc, char *argv[])
 	char *ofilename = NULL;
 	unsigned long n_threads = 1;
 
-	while ((c = getopt(argc, argv, "i:o:p:")) != -1) {
+	while ((c = getopt(argc, argv, "i:o:p:h")) != -1) {
 		switch (c) {
 		case 'i':
-			/* Man page does not state whether optarg must be copied or not.
-			In my case, it points to the argv element. However, to avoid
-			problems with different implementation, I explicitly copy it. */
+			/* Man page does not state whether optarg must be
+			 * copied or not. In my case, it points to the argv
+			 * element. However, to avoid problems with different
+			 * implementation, I explicitly copy it. */
 			ifilename = strdup(optarg);
 			break;
 		case 'o':
@@ -91,6 +91,9 @@ int main(int argc, char *argv[])
 		case 'p':
 			n_threads = strtoul(optarg, NULL, 10);
 			break;
+		case 'h':
+			print_usage(argv[0]);
+			return 0;
 		case ':':
 			fprintf(stderr, "Option -%c requires an operand\n", optopt);
 			break;
@@ -104,34 +107,25 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Invalid number of threads\n");
 		return -1;
 	}
-	printf("Will create %lu threads\n", n_threads);
-
-	// Open files
-	FILE *ifile = NULL;
-	FILE *ofile = NULL;
 
 	if (ifilename == NULL) {
-		ifile = stdin;
-	} else {
-		ifile = fopen(ifilename, "r");
-		free(ifilename);
+		fprintf(stderr, "Please specify input file using -i flag. "
+				"Check -h flag for usage\n");
+		return -1;
 	}
 
 	if (ofilename == NULL) {
-		ofile = stdout;
-	} else {
-		ofile = fopen(ofilename, "w");
-		free(ofilename);
+		fprintf(stderr, "Please specify output file using -o flag. "
+				"Check -h flag for usage\n");
+		return -1;
 	}
 
-	// Free FILE's
-	if (ifile != stdin) {
-		fclose(ifile);
-	}
+	netpbm_image_t image;
+	read_netpbm_file(ifilename, &image);
 
-	if (ofile != stdout) {
-		fclose(ofile);
-	}
+	free_netpbm_image(&image);
+	free(ifilename);
+	free(ofilename);
 
 	return 0;
 }

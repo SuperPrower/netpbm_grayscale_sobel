@@ -2,4 +2,7 @@
 *.so
 *.o
 *.gch
+
+compile_commands.json
+
 ngsobel

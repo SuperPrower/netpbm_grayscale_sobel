@@ -1,23 +1,24 @@
 CC = gcc
-CFLAGS = -fPIC -Wall -Wextra -O2 -g
-LDFLAGS = -shared
+CCFLAGS = -Wall -Wextra -std=gnu11
 
 all: ngsobel
 
-ngsobel: main.o # netpbm.so netpbm_sobel.so
-	$(CC) -o ngsobel main.o # -L. -lntmpbm -lnetpbm_sobel
+debug: CCFLAGS += -DDEBUG -g
+debug: ngsobel
+
+ngsobel: main.o libnetpbm_gs.a
+	$(CC) $(CCFLAGS) -o ngsobel main.o -L. -lnetpbm_gs
 
 main.o: main.c
-	$(CC) -c main.c
+	$(CC) $(CCFLAGS) -c main.c
 
-# netpbm_sobel.so: netpbm.so
-# 	$(CC)
-#
-# netpbm.so:
-#
-#
+libnetpbm_gs.a: netpbm_gs.o
+	ar rcs libnetpbm_gs.a netpbm_gs.o
+
+netpbm_gs.o: netpbm_gs.c
+	$(CC) $(CCFLAGS) -c netpbm_gs.c -I.
 
 .PHONY: clean
 
 clean:
-	rm -f ngsobel *.o *.a *.so *.gch
+	rm -f ngsobel *.o *.a *.gch
