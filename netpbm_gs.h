@@ -147,32 +147,6 @@ int apply_sobel_to(uint32_t **data_in, uint32_t dh, uint32_t dw, uint32_t *out);
 int write_netpbm_file(char *filename, netpbm_image_t *img);
 
 /**
- * @brief Helper function that writes out Binary image.
- *
- * Writes image from the structure to the given file in binary format.
- *
- * @param[in] filename - output image filename/path
- * @param[in] img - netpbm image structure to be written.
- *
- * @return 0 if no problem occured, -1 otherwise
- *
- */
-int write_binary_netpbm_file(char *filename, netpbm_image_t *img);
-
-/**
- * @brief Helper function that writes out ASCII image.
- *
- * Writes image from the structure to the given file in ASCII format.
- *
- * @param[in] filename - output image filename/path
- * @param[in] img - netpbm image structure to be written.
- *
- * @return 0 if no problem occured, -1 otherwise
- *
- */
-int write_ascii_netpbm_file(char *filename, netpbm_image_t *img);
-
-/**
  * @brief Frees allocated memory in Netpbm image structure.
  *
  * Frees memory allocated for the data field in the structure.

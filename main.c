@@ -121,7 +121,11 @@ int main(int argc, char *argv[])
 	}
 
 	netpbm_image_t image;
-	read_netpbm_file(ifilename, &image);
+	if (read_netpbm_file(ifilename, &image) != 0) {
+		return -1;
+	}
+
+	write_netpbm_file(ofilename, &image);
 
 	free_netpbm_image(&image);
 	free(ifilename);

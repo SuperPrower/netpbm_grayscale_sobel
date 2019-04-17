@@ -3,6 +3,8 @@
 *.o
 *.gch
 
+test_out/*
+
 compile_commands.json
 
 ngsobel
