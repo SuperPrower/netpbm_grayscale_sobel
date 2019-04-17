@@ -26,6 +26,7 @@
 #include <string.h>
 #include <limits.h>
 #include <errno.h>
+#include <time.h>
 
 /*
  * TODO:
@@ -140,8 +141,16 @@ int main(int argc, char *argv[])
 	if (do_greyscale && netpbm_to_greyscale(&image) != 0)
 		return -1;
 
-	if (netpbm_sobel(&image, 1) != 0)
+
+	clock_t start = clock(), diff;
+
+	if (netpbm_sobel(&image, n_threads) != 0)
 		return -1;
+
+	diff = clock() - start;
+
+	int msec = diff * 1000 / CLOCKS_PER_SEC;
+	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
 
 	write_netpbm_file(ofilename, &image);
 

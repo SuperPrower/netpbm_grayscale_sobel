@@ -28,6 +28,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
+#include <limits.h>
 
 #include <errno.h>
 #include <math.h>
@@ -132,6 +134,80 @@ int apply_kernel(
 	return 0;
 }
 
+/**
+ * @struct Data about image shared between worker threads
+ */
+struct kernel_task {
+	uint32_t *p_data; /**< Padded data */
+	uint32_t p_width, p_height;
+
+	uint32_t *dest; /**< image data */
+	uint32_t d_width, d_height;
+};
+
+/**
+ * @struct Data local to the worker thread
+ */
+struct thread_info {
+	struct kernel_task* task;
+
+	uint32_t n_threads;
+	uint32_t thread_id;
+};
+
+void *thread_task(void * arguments)
+{
+	struct thread_info *info = (struct thread_info *) arguments;
+	struct kernel_task *task = (struct kernel_task *) info->task;
+	/* Sobel kernel components */
+	uint32_t x_kernel[] = {
+		-1, 0, 1,
+		-2, 0, 2,
+		-1, 0, 1
+	};
+
+	uint32_t y_kernel[] = {
+		-1, -2, -1,
+		 0,  0,  0,
+		 1,  2,  1
+	};
+
+	for (size_t i = info->thread_id;
+		i < (task->d_width * task->d_height);
+		i+= info->n_threads
+	) {
+		uint32_t out_x = 0;
+		uint32_t out_y = 0;
+
+		if (apply_kernel(task->p_data,
+				task->p_width, task->p_height,
+				(i % task->d_width) + 1, (i / task->d_width) + 1,
+				x_kernel, 3, 3,
+				&out_x
+		) != 0) {
+			fprintf(stderr, "Unable to apply kernel to the data!\n");
+			exit(EXIT_FAILURE);
+		};
+
+		if (apply_kernel(task->p_data,
+				task->p_width, task->p_height,
+				(i % task->d_width) + 1, (i / task->d_width) + 1,
+				y_kernel, 3, 3,
+				&out_y
+		) != 0) {
+			fprintf(stderr, "Unable to apply kernel to the data!\n");
+			exit(EXIT_FAILURE);
+		};
+
+		uint32_t val = sqrt(out_x * out_x + out_y * out_y);
+
+		task->dest[i] = val;
+	}
+
+
+	return NULL;
+}
+
 int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads)
 {
 	if (img->data == NULL) {
@@ -141,6 +217,11 @@ int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads)
 
 	if (img->type == NETPBM_ASCII_PIXMAP || img->type == NETPBM_BINARY_PIXMAP) {
 		fprintf(stderr, "Turn image into greyscale first using -g flag\n");
+		return -1;
+	}
+
+	if (n_threads == 0 || n_threads == ULONG_MAX) {
+		fprintf(stderr, "Invalid amount of threads!\n");
 		return -1;
 	}
 
@@ -165,42 +246,63 @@ int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads)
 		);
 	}
 
-	/* Apply two kernels */
+	struct kernel_task task = {
+		p_data,
+		p_width, p_height,
 
-	uint32_t x_kernel[] = {
-		-1, 0, 1,
-		-2, 0, 2,
-		-1, 0, 1
+		img->data,
+		img->width, img->height
 	};
 
-	uint32_t y_kernel[] = {
-		-1, -2, -1,
-		 0,  0,  0,
-		 1,  2,  1
-	};
+	struct thread_info *t_info = (struct thread_info *)
+		malloc(sizeof(struct thread_info) * n_threads);
 
-	for (size_t i = 0; i < img->width; i++) {
-		for (size_t j = 0; j < img->height; j++) {
-			uint32_t out_x = 0;
-			uint32_t out_y = 0;
+	pthread_t *threads = (pthread_t *)
+		malloc(sizeof(pthread_t) * n_threads);
 
-			if (apply_kernel(p_data, p_width, p_height,
-					i + 1, j + 1,
-					x_kernel, 3, 3,
-					&out_x
-			) != 0) return -1;
+	for (size_t t = 0; t < n_threads; t++) {
+		/* fill worker info */
+		t_info[t].n_threads = n_threads;
+		t_info[t].thread_id = t;
+		t_info[t].task = &task;
 
-			if (apply_kernel(p_data, p_width, p_height,
-					i + 1, j + 1,
-					y_kernel, 3, 3,
-					&out_y
-			) != 0) return -1;
-
-			uint32_t val = sqrt(out_x * out_x + out_y * out_y);
-
-			img->data[(j * img->width) + (i)] = val;
+		if (pthread_create(
+			&threads[t], NULL,
+			thread_task,
+			(void*)(&t_info[t])
+		) != 0) {
+			fprintf(stderr, "Unable to create thread %lu!\n", t);
+			return -1;
 		}
 	}
+
+	for (size_t t = 0; t < n_threads; t++) {
+		switch (pthread_join(threads[t], NULL)) {
+		case EDEADLK:
+			fprintf(stderr, "Deadlock occured!\n");
+			return -1;
+
+		case EINVAL:
+			fprintf(stderr,
+				"Thread %lu is not a joinable thread, "
+				"or another thread is already waiting to "
+				"join it!\n", t
+			);
+			return -1;
+
+		case ESRCH:
+			fprintf(stderr, "Thread %lu could not be found\n", t);
+			return -1;
+
+		case 0:
+			break;
+		}
+	}
+
+	free(threads);
+	free(t_info);
+
+	free(p_data);
 
 	// TODO: normalize values up to maxval
 

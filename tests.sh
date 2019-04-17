@@ -25,8 +25,19 @@ for index in "${!inputs[@]}"; do
 	./ngsobel -i "test_in/${inputs[$index]}" -o "test_out/${outputs[$index]}"
 done
 
+echo ==============================
 echo Running greyscale test on "${inputs[2]}"
 ./ngsobel -i "test_in/${inputs[2]}" -o "test_out/p2_from_p3_greyscale.pgm" -g
 
 echo Running greyscale test on "${inputs[5]}"
 ./ngsobel -i "test_in/${inputs[5]}" -o "test_out/p5_from_p6_greyscale.pgm" -g
+
+echo ==============================
+echo Testing 1-threaded performance
+./ngsobel -i "test_in/p5_large.pgm" -o "test_out/p5_large.pgm" -p 1
+
+echo Testing 2-threaded performance
+./ngsobel -i "test_in/p5_large.pgm" -o "test_out/p5_large.pgm" -p 2
+
+echo Testing 4-threaded performance
+./ngsobel -i "test_in/p5_large.pgm" -o "test_out/p5_large.pgm" -p 4
