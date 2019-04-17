@@ -92,10 +92,11 @@ int netpbm_to_greyscale(netpbm_image_t *img);
 /**
  * @brief apply Sobel operator to the greyscale Netpbm image.
  *
- * Apply Sobel operator to the greyscale Netpbm image. If image is not greyscale,
- * function exits with error code 1. In that case, use netpbm_to_greyscale()
- * function. Image size is retained by padding original image.
- * If n_threads is given, job would be split between n threads
+ * Apply Sobel operator to the greyscale Netpbm image. If image is
+ * not greyscale, function exits with error code 1. In that case,
+ * use netpbm_to_greyscale() function. Image size is retained by
+ * padding original image. If n_threads is given, job would be split
+ * between n threads
  *
  * @param[in,out] img - Netpbm image structure to be turned greyscale.
  * @param[in] n_threads - request creating at least n threads.

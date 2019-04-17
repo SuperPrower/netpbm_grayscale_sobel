@@ -62,8 +62,14 @@
  * Time of algorithm execution: 3.2 ms
  */
 
-void print_usage(char* binary_name) {
-	printf("Usage: %s\n", binary_name);
+void print_usage(char *binary_name)
+{
+	printf("Usage: %s -i ifilename -o filename [-g] [-p n_threads] [-h]\n"
+		"-i, -o - input and output files. Required.\n"
+		"-g     - turn image to greyscale. Required for RGB images\n"
+		"-p     - split Sobel operator between n threads",
+		binary_name
+	);
 }
 
 int main(int argc, char *argv[])
@@ -84,7 +90,8 @@ int main(int argc, char *argv[])
 			/* Man page does not state whether optarg must be
 			 * copied or not. In my case, it points to the argv
 			 * element. However, to avoid problems with different
-			 * implementation, I explicitly copy it. */
+			 * implementation, I explicitly copy it.
+			 */
 			ifilename = strdup(optarg);
 			break;
 		case 'o':
@@ -126,17 +133,15 @@ int main(int argc, char *argv[])
 	}
 
 	netpbm_image_t image;
-	if (read_netpbm_file(ifilename, &image) != 0) {
-		return -1;
-	}
 
-	if (do_greyscale && netpbm_to_greyscale(&image) != 0) {
+	if (read_netpbm_file(ifilename, &image) != 0)
 		return -1;
-	}
 
-	if (netpbm_sobel(&image, 1) != 0) {
+	if (do_greyscale && netpbm_to_greyscale(&image) != 0)
 		return -1;
-	}
+
+	if (netpbm_sobel(&image, 1) != 0)
+		return -1;
 
 	write_netpbm_file(ofilename, &image);
 

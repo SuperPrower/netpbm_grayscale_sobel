@@ -55,13 +55,15 @@ int netpbm_to_greyscale(netpbm_image_t *img)
 	}
 
 	size_t total_pixels = img->width * img->height;
+
 	for (size_t i = 0; i < total_pixels; i++) {
 		img->data[i]
 			= 0.21 * NETPBM_RED(img->data[i])
 			+ 0.72 * NETPBM_GREEN(img->data[i])
 			+ 0.07 * NETPBM_BLUE(img->data[i]);
 
-		if (img->data[i] > img->maxval) img->data[i] = img->maxval;
+		if (img->data[i] > img->maxval)
+			img->data[i] = img->maxval;
 	}
 
 	// It's now a greyscale image, not RGB, so adjust image type
@@ -97,7 +99,8 @@ int apply_kernel(
 		uint32_t fx, uint32_t fy,
 		uint32_t *kernel, uint32_t kw, uint32_t kh,
 		uint32_t *out
-) {
+)
+{
 	if (kh % 2 == 0 || kw % 2 == 0) {
 		// are 2n sized kernels legal? I think they aren't...
 		fprintf(stderr, "Kernel must be 2n+1 sized\n");
@@ -145,7 +148,7 @@ int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads)
 	uint32_t p_height = img->height + 2;
 	uint32_t p_width = img->width + 2;
 	uint32_t p_elems = p_width * p_height;
-	uint32_t *p_data = (uint32_t*) malloc(sizeof(uint32_t) * p_elems);
+	uint32_t *p_data = (uint32_t *) malloc(sizeof(uint32_t) * p_elems);
 
 	// fill data with zeroes
 	// TODO: implement some other kind of padding?
@@ -153,10 +156,12 @@ int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads)
 
 	/* Copy image data to the center of padded array line by line,
 	 * starting from the second element of the second row
-	 * of the padded data array */
+	 * of the padded data array
+	 */
 	for (size_t row = 0; row < img->height; row++) {
-		memcpy( (p_data + p_width * (row + 1) + 1),
-			(img->data + row * img->width), sizeof(uint32_t) * img->width
+		memcpy((p_data + p_width * (row + 1) + 1),
+			(img->data + row * img->width),
+			sizeof(uint32_t) * img->width
 		);
 	}
 
@@ -179,19 +184,20 @@ int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads)
 			uint32_t out_x = 0;
 			uint32_t out_y = 0;
 
-			if (apply_kernel( p_data, p_width, p_height,
+			if (apply_kernel(p_data, p_width, p_height,
 					i + 1, j + 1,
 					x_kernel, 3, 3,
 					&out_x
 			) != 0) return -1;
 
-			if (apply_kernel( p_data, p_width, p_height,
+			if (apply_kernel(p_data, p_width, p_height,
 					i + 1, j + 1,
 					y_kernel, 3, 3,
 					&out_y
 			) != 0) return -1;
 
 			uint32_t val = sqrt(out_x * out_x + out_y * out_y);
+
 			img->data[(j * img->width) + (i)] = val;
 		}
 	}

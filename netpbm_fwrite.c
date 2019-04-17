@@ -33,14 +33,17 @@
 /* Helper Functions */
 static inline int __WRITE_BYTE(FILE *ofile, uint8_t byte)
 {
-	if (fwrite(&byte, sizeof(uint8_t), 1, ofile) != 1) return -1;
+	if (fwrite(&byte, sizeof(uint8_t), 1, ofile) != 1)
+		return -1;
+
 	return 0;
 }
 
 static inline int __WRITE_ASCII_NUMBER(FILE *ofile, uint32_t number)
 {
 	// edge case
-	if (number == 0) return __WRITE_BYTE(ofile, '0');
+	if (number == 0)
+		return __WRITE_BYTE(ofile, '0');
 
 	// split number into digits characters array
 	uint8_t digits[16];
@@ -52,7 +55,8 @@ static inline int __WRITE_ASCII_NUMBER(FILE *ofile, uint32_t number)
 	}
 
 	for (int c = n_digits - 1; c >= 0; c--) {
-		if (__WRITE_BYTE(ofile, digits[c]) != 0) return -1;
+		if (__WRITE_BYTE(ofile, digits[c]) != 0)
+			return -1;
 	}
 
 	return 0;
@@ -62,18 +66,20 @@ static inline int __WRITE_ASCII_NUMBER(FILE *ofile, uint32_t number)
 int write_netpbm_file(char *filename, netpbm_image_t *img)
 {
 	FILE *ofile = fopen(filename, "wb");
-	if (ofile == NULL) {
+
+	if (ofile == NULL)
 		fprintf(stderr, "Unable to open file: error %d\n", errno);
-	}
 
 #define WRITE_BYTE(X)	\
 	do {\
-		if (__WRITE_BYTE(ofile, (X)) != 0) goto error; \
+		if (__WRITE_BYTE(ofile, (X)) != 0) \
+			goto error; \
 	} while (0)
 
 #define WRITE_ASCII_NUMBER(X)	\
 	do {\
-		if (__WRITE_ASCII_NUMBER(ofile, (X)) != 0) goto error; \
+		if (__WRITE_ASCII_NUMBER(ofile, (X)) != 0) \
+			goto error; \
 	} while (0)
 
 
@@ -125,44 +131,44 @@ int write_netpbm_file(char *filename, netpbm_image_t *img)
 	}
 
 	 /* 8.
-	 * -- P1: Width x Height bits, each either '1' or '0', starting at
-	 * 		the top-left corner of the bitmap, proceeding in normal
-	 * 		English reading order.
-	 *
-	 * -- P2: Width x Height gray values, each in ASCII decimal,
-	 * 		between 0 and the specified maximum value, separated
-	 * 		by whitespace, starting at the top-left corner of the
-	 * 		graymap, proceeding in normal English reading order.
-	 * 		A value of 0 means black, and the maximum value means white.
-	 *
-	 * -- P3: Width x Height pixels, each three ASCII decimal values
-	 * 		between 0 and the specified maximum value, starting at
-	 * 		the top-left corner of the pixmap, proceeding in normal
-	 * 		English reading order. The three values for each pixel
-	 * 		represent red, green, and blue, respectively; a value of
-	 * 		0 means that color is off, and the maximum value means
-	 * 		that color is maxed out.
-	 *
-	 * -- P4: Width x Height bits, stored 8 bits per byte, high bit
-	 * 		first and low bit last, starting at the top-left corner
-	 * 		of the bitmap, proceeding in normal English reading order.
-	 *
-	 * -- P5: Width x Height gray values, each stored as a plain byte,
-	 * 		between 0 and the specified maximum value, separated by
-	 * 		whitespace, starting at the top-left corner of the graymap,
-	 * 		proceeding in normal English reading order. A value of 0
-	 * 		means black, and the maximum value means white.
-	 *
-	 * -- P6: Width x Height pixels, each pixel being described by 3
-	 * 		bytes, each between 0 and the specified maximum value,
-	 * 		starting at the top-left corner of the pixmap, proceeding
-	 * 		in normal English reading order. The three values for
-	 * 		each pixel represent red, green, and blue, respectively;
-	 * 		a value of 0 means that color is off, and the maximum
-	 * 		value means that color is maxed out.
-	 *
-	 * [ ] TODO: PAM format
-	 */
+	  * -- P1: Width x Height bits, each either '1' or '0', starting at
+	  * 		the top-left corner of the bitmap, proceeding in normal
+	  * 		English reading order.
+	  *
+	  * -- P2: Width x Height gray values, each in ASCII decimal,
+	  * 		between 0 and the specified maximum value, separated
+	  * 		by whitespace, starting at the top-left corner of the
+	  * 		graymap, proceeding in normal English reading order.
+	  * 		A value of 0 means black, and the maximum value means white.
+	  *
+	  * -- P3: Width x Height pixels, each three ASCII decimal values
+	  * 		between 0 and the specified maximum value, starting at
+	  * 		the top-left corner of the pixmap, proceeding in normal
+	  * 		English reading order. The three values for each pixel
+	  * 		represent red, green, and blue, respectively; a value of
+	  * 		0 means that color is off, and the maximum value means
+	  * 		that color is maxed out.
+	  *
+	  * -- P4: Width x Height bits, stored 8 bits per byte, high bit
+	  * 		first and low bit last, starting at the top-left corner
+	  * 		of the bitmap, proceeding in normal English reading order.
+	  *
+	  * -- P5: Width x Height gray values, each stored as a plain byte,
+	  * 		between 0 and the specified maximum value, separated by
+	  * 		whitespace, starting at the top-left corner of the graymap,
+	  * 		proceeding in normal English reading order. A value of 0
+	  * 		means black, and the maximum value means white.
+	  *
+	  * -- P6: Width x Height pixels, each pixel being described by 3
+	  * 		bytes, each between 0 and the specified maximum value,
+	  * 		starting at the top-left corner of the pixmap, proceeding
+	  * 		in normal English reading order. The three values for
+	  * 		each pixel represent red, green, and blue, respectively;
+	  * 		a value of 0 means that color is off, and the maximum
+	  * 		value means that color is maxed out.
+	  *
+	  * [ ] TODO: PAM format
+	  */
 
 	uint32_t cp = 0;
 	const uint32_t total_pixels = img->width * img->height;
@@ -202,9 +208,8 @@ int write_netpbm_file(char *filename, netpbm_image_t *img)
 				byte_ready = 1;
 			}
 
-			if (bits_filled == 8) {
+			if (bits_filled == 8)
 				byte_ready = 1;
-			}
 
 			if (byte_ready) {
 				byte_ready = 0;

@@ -35,25 +35,33 @@
 
 static inline int FIND_EOL(FILE *ifile)
 {
+	uint8_t byte;
+
 	while (1) {
-		uint8_t byte;
-		if (fread(&byte, sizeof(uint8_t), 1, ifile) != 1) {
+		if (fread(&byte, sizeof(uint8_t), 1, ifile) != 1)
 			return -1;
-		}
-		if (byte != '\n' && byte != '\r') continue;
-		else break;
+
+		if (byte != '\n' && byte != '\r')
+			continue;
+		else
+			break;
 	}
+
 	return 0;
 }
 
 static inline int SKIP_EOL(FILE *ifile)
 {
+	uint8_t byte;
+
 	while (1) {
-		uint8_t byte;
-		if (fread(&byte, sizeof(uint8_t), 1, ifile) != 1) {
+
+		if (fread(&byte, sizeof(uint8_t), 1, ifile) != 1)
 			return -1;
-		}
-		if (byte == '\n' || byte == '\r') continue;
+
+		if (byte == '\n' || byte == '\r')
+			continue;
+
 		else {
 			fseek(ifile, -1, SEEK_CUR);
 			break;
@@ -64,44 +72,49 @@ static inline int SKIP_EOL(FILE *ifile)
 
 static inline int SKIP_WHITESPACE(FILE *ifile)
 {
+	uint8_t byte;
+
 	while (1) {
-		uint8_t byte;
-		if (fread(&byte, sizeof(uint8_t), 1, ifile) != 1) {
+		if (fread(&byte, sizeof(uint8_t), 1, ifile) != 1)
 			return -1;
-		}
+
 		if (byte == '#') {
-			if (FIND_EOL(ifile) != 0) return -1;
-			if (SKIP_EOL(ifile) != 0) return -1;
+			if (FIND_EOL(ifile) != 0)
+				return -1;
+			if (SKIP_EOL(ifile) != 0)
+				return -1;
 			continue;
+
 		} else if (isspace(byte)) {
 			continue;
+
 		} else if (byte == '\n' || byte == '\r') {
 			SKIP_EOL(ifile);
 			continue;
+
 		} else {
 			fseek(ifile, -1, SEEK_CUR);
 			break;
+
 		};
 	}
 
 	return 0;
 }
 
-static inline int READ_BYTE(FILE * ifile, uint32_t *dest)
+static inline int READ_BYTE(FILE *ifile, uint32_t *dest)
 {
 	uint8_t byte;
 
-	while (1) {
-		if (fread(&byte, sizeof(char), 1, ifile) != 1) { return -1; }
+	if (fread(&byte, sizeof(char), 1, ifile) != 1)
+		return -1;
 
-		*dest = byte;
-		break;
-	}
+	*dest = byte;
 
 	return 0;
 }
 
-static inline int READ_NUMBER(FILE * ifile, uint32_t *dest)
+static inline int READ_NUMBER(FILE *ifile, uint32_t *dest)
 {
 	uint8_t byte;
 	uint8_t n_digits = 0;
@@ -125,12 +138,18 @@ static inline int READ_NUMBER(FILE * ifile, uint32_t *dest)
 	return 0;
 }
 
-static inline int READ_PIXEL_WORD(FILE * ifile, uint32_t maxval, uint32_t *dest)
+static inline int READ_PIXEL_WORD(FILE *ifile, uint32_t maxval, uint32_t *dest)
 {
 	uint32_t number;
-	if (READ_NUMBER(ifile, &number) != 0) return -1;
-	if (SKIP_WHITESPACE(ifile) != 0 && feof(ifile) == 0) return -1;
-	if (number > maxval) return -1;
+
+	if (READ_NUMBER(ifile, &number) != 0)
+		return -1;
+
+	if (SKIP_WHITESPACE(ifile) != 0 && feof(ifile) == 0)
+		return -1;
+
+	if (number > maxval)
+		return -1;
 
 	*dest = number;
 	return 0;
@@ -141,8 +160,10 @@ static inline int READ_PIXEL_WORD(FILE * ifile, uint32_t maxval, uint32_t *dest)
 int read_netpbm_file(char *filename, netpbm_image_t *img)
 {
 	FILE *ifile = fopen(filename, "rb");
+
 	if (ifile == NULL) {
 		fprintf(stderr, "Unable to open file: error %d\n", errno);
+		return -1;
 	}
 
 	/*
@@ -156,7 +177,9 @@ int read_netpbm_file(char *filename, netpbm_image_t *img)
 	 */
 
 	uint8_t magic[2];
-	if (fread(magic, sizeof(uint8_t), 2, ifile) != 2) { goto error; }
+
+	if (fread(magic, sizeof(uint8_t), 2, ifile) != 2)
+		goto error;
 
 	if (magic[0] != 'P' || magic[1] < '1' || magic[1] > '7') {
 		fprintf(stderr, "Unable to identify magic number\n");
@@ -167,19 +190,24 @@ int read_netpbm_file(char *filename, netpbm_image_t *img)
 	img->type = magic[1] - '0';
 
 	/* 2. Whitespace (blanks, TABs, CRs, LFs). */
-	if (SKIP_WHITESPACE(ifile) != 0) goto error;
+	if (SKIP_WHITESPACE(ifile) != 0)
+		goto error;
 
 	/* 3. A width, formatted as ASCII characters in decimal. */
-	if (READ_NUMBER(ifile, &img->width) != 0) goto error;
+	if (READ_NUMBER(ifile, &img->width) != 0)
+		goto error;
 
 	/* 4. Whitespace. */
-	if (SKIP_WHITESPACE(ifile) != 0) goto error;
+	if (SKIP_WHITESPACE(ifile) != 0)
+		goto error;
 
 	/* 5. A height, again in ASCII decimal. */
-	if (READ_NUMBER(ifile, &img->height)) goto error;
+	if (READ_NUMBER(ifile, &img->height))
+		goto error;
 
 	/* 6. Whitespace. */
-	if (SKIP_WHITESPACE(ifile) != 0) goto error;
+	if (SKIP_WHITESPACE(ifile) != 0)
+		goto error;
 
 	/*
 	 * 7.1.
@@ -201,7 +229,7 @@ int read_netpbm_file(char *filename, netpbm_image_t *img)
 	}
 
 #if DEBUG
-	printf("Read structure: \n"
+	printf("Read structure:\n"
 		"\tType: %u\n"
 		"\tMaxval: %u\n"
 		"\tHeight: %u\n"
@@ -214,48 +242,48 @@ int read_netpbm_file(char *filename, netpbm_image_t *img)
 #endif // DEBUG
 
 	 /* 8.
-	 * -- P1: Width x Height bits, each either '1' or '0', starting at
-	 * 		the top-left corner of the bitmap, proceeding in normal
-	 * 		English reading order.
-	 *
-	 * -- P2: Width x Height gray values, each in ASCII decimal,
-	 * 		between 0 and the specified maximum value, separated
-	 * 		by whitespace, starting at the top-left corner of the
-	 * 		graymap, proceeding in normal English reading order.
-	 * 		A value of 0 means black, and the maximum value means white.
-	 *
-	 * -- P3: Width x Height pixels, each three ASCII decimal values
-	 * 		between 0 and the specified maximum value, starting at
-	 * 		the top-left corner of the pixmap, proceeding in normal
-	 * 		English reading order. The three values for each pixel
-	 * 		represent red, green, and blue, respectively; a value of
-	 * 		0 means that color is off, and the maximum value means
-	 * 		that color is maxed out.
-	 *
-	 * -- P4: Width x Height bits, stored 8 bits per byte, high bit
-	 * 		first and low bit last, starting at the top-left corner
-	 * 		of the bitmap, proceeding in normal English reading order.
-	 *
-	 * -- P5: Width x Height gray values, each stored as a plain byte,
-	 * 		between 0 and the specified maximum value, separated by
-	 * 		whitespace, starting at the top-left corner of the graymap,
-	 * 		proceeding in normal English reading order. A value of 0
-	 * 		means black, and the maximum value means white.
-	 *
-	 * -- P6: Width x Height pixels, each pixel being described by 3
-	 * 		bytes, each between 0 and the specified maximum value,
-	 * 		starting at the top-left corner of the pixmap, proceeding
-	 * 		in normal English reading order. The three values for
-	 * 		each pixel represent red, green, and blue, respectively;
-	 * 		a value of 0 means that color is off, and the maximum
-	 * 		value means that color is maxed out.
-	 *
-	 * Characters from a "#" to the next end-of-line are ignored (comments).
-	 * [ ] TODO: PAM format
-	 */
+	  * -- P1: Width x Height bits, each either '1' or '0', starting at
+	  * 		the top-left corner of the bitmap, proceeding in normal
+	  * 		English reading order.
+	  *
+	  * -- P2: Width x Height gray values, each in ASCII decimal,
+	  * 		between 0 and the specified maximum value, separated
+	  * 		by whitespace, starting at the top-left corner of the
+	  * 		graymap, proceeding in normal English reading order.
+	  * 		A value of 0 means black, and the maximum value means white.
+	  *
+	  * -- P3: Width x Height pixels, each three ASCII decimal values
+	  * 		between 0 and the specified maximum value, starting at
+	  * 		the top-left corner of the pixmap, proceeding in normal
+	  * 		English reading order. The three values for each pixel
+	  * 		represent red, green, and blue, respectively; a value of
+	  * 		0 means that color is off, and the maximum value means
+	  * 		that color is maxed out.
+	  *
+	  * -- P4: Width x Height bits, stored 8 bits per byte, high bit
+	  * 		first and low bit last, starting at the top-left corner
+	  * 		of the bitmap, proceeding in normal English reading order.
+	  *
+	  * -- P5: Width x Height gray values, each stored as a plain byte,
+	  * 		between 0 and the specified maximum value, separated by
+	  * 		whitespace, starting at the top-left corner of the graymap,
+	  * 		proceeding in normal English reading order. A value of 0
+	  * 		means black, and the maximum value means white.
+	  *
+	  * -- P6: Width x Height pixels, each pixel being described by 3
+	  * 		bytes, each between 0 and the specified maximum value,
+	  * 		starting at the top-left corner of the pixmap, proceeding
+	  * 		in normal English reading order. The three values for
+	  * 		each pixel represent red, green, and blue, respectively;
+	  * 		a value of 0 means that color is off, and the maximum
+	  * 		value means that color is maxed out.
+	  *
+	  * Characters from a "#" to the next end-of-line are ignored (comments).
+	  * [ ] TODO: PAM format
+	  */
 
 	/* allocate data */
-	img->data = (uint32_t*) malloc(sizeof(uint32_t*) * img->width * img->height);
+	img->data = (uint32_t *) malloc(sizeof(uint32_t *) * img->width * img->height);
 
 	uint32_t cp = 0;
 	// for P4
@@ -277,6 +305,7 @@ int read_netpbm_file(char *filename, netpbm_image_t *img)
 		} else if (img->type == NETPBM_ASCII_PIXMAP) {
 			// read image 3 words at a time
 			uint32_t red, green, blue;
+
 			if (READ_PIXEL_WORD(ifile, img->maxval, &red) != 0)
 				goto error;
 
@@ -300,10 +329,13 @@ int read_netpbm_file(char *filename, netpbm_image_t *img)
 			if (byte_needed) {
 				bits_read = 0;
 				byte_needed = 0;
-				if (READ_BYTE(ifile, &byte) != 0) goto error;
+				if (READ_BYTE(ifile, &byte) != 0)
+					goto error;
 			}
 
-			img->data[cp] = ((byte >> (7 - bits_read)) & 1U) ? 255U : 0;
+			img->data[cp] = ((byte >> (7 - bits_read)) & 1U)
+				? 255U : 0;
+
 			column++;
 			bits_read++;
 
@@ -312,9 +344,8 @@ int read_netpbm_file(char *filename, netpbm_image_t *img)
 				byte_needed = 1;
 			}
 
-			if (bits_read == 8) {
+			if (bits_read == 8)
 				byte_needed = 1;
-			}
 
 		} else if (img->type == NETPBM_BINARY_GREYMAP) {
 			if (READ_BYTE(ifile, &(img->data[cp])) != 0)
@@ -322,9 +353,12 @@ int read_netpbm_file(char *filename, netpbm_image_t *img)
 
 		} else if (img->type == NETPBM_BINARY_PIXMAP) {
 			uint32_t red, green, blue;
-			if (READ_BYTE(ifile, &red) != 0) goto error;
-			if (READ_BYTE(ifile, &green) != 0) goto error;
-			if (READ_BYTE(ifile, &blue) != 0) goto error;
+			if (READ_BYTE(ifile, &red) != 0)
+				goto error;
+			if (READ_BYTE(ifile, &green) != 0)
+				goto error;
+			if (READ_BYTE(ifile, &blue) != 0)
+				goto error;
 
 			img->data[cp]
 				= (red & 0xff)
