@@ -52,13 +52,13 @@ enum NETPBM_TYPE {
  * @brief structure describing loaded Netpbm image
  */
 typedef struct {
-	enum NETPBM_TYPE type;
-	uint32_t maxval;
+	enum NETPBM_TYPE type; /**< Type of the image */
+	uint32_t maxval; /**< Maximal value of pixel or color component */
 
-	uint32_t height;
-	uint32_t width;
+	uint32_t height; /**< Image height, in pixels */
+	uint32_t width; /**< Image width, in pixels */
 
-	uint32_t *data;
+	uint32_t *data; /**< Pixel data in row-major order */
 } netpbm_image_t;
 
 
@@ -95,19 +95,6 @@ int netpbm_to_greyscale(netpbm_image_t *img);
  * Apply Sobel operator to the greyscale Netpbm image. If image is not greyscale,
  * function exits with error code 1. In that case, use netpbm_to_greyscale()
  * function. Image size is retained by padding original image.
- *
- * @param[in,out] img - Netpbm image structure to be turned greyscale.
- *
- * @return 0 if no problem occured, 1 if image is not greyscale, -1 otherwise
- */
-int netpbm_sobel(netpbm_image_t *img);
-
-/**
- * @brief apply Sobel operator to the greyscale Netpbm image.
- *
- * Apply Sobel operator to the greyscale Netpbm image. If image is not greyscale,
- * function exits with error code 1. In that case, use netpbm_to_greyscale()
- * function. Image size is retained by padding original image.
  * If n_threads is given, job would be split between n threads
  *
  * @param[in,out] img - Netpbm image structure to be turned greyscale.
@@ -115,24 +102,7 @@ int netpbm_sobel(netpbm_image_t *img);
  *
  * @return 0 if no problem occured, 1 if image is not greyscale, -1 otherwise
  */
-int netpbm_sobel_threaded(netpbm_image_t *img, unsigned long n_threads);
-
-/**
- * @brief Helper function that applies Sobel operator to the data.
- *
- * Applies Sobel operator ONCE to the data. Input data must be pre-padded if
- * necessary.
- *
- * @param[in] data_in - original data matrix. Only least significant byte is
- * considered.
- * @param[in] dx - focus point column in the input
- * @param[in] dy - focus point row in data matrix
- * @param[out] out - point to which put the result.
- *
- * @returns 0 if no problem occured, -1 otherwise
- */
-int apply_sobel_to(uint32_t **data_in, uint32_t dh, uint32_t dw, uint32_t *out);
-
+int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads);
 /**
  * @brief Write Netpbm image to the file
  *

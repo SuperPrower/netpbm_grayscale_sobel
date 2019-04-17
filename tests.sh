@@ -19,8 +19,14 @@ declare -a outputs=(
 	"p5_test_out.pgm"
 	"p6_test_out.ppm"
 )
-set -x
+
 for index in "${!inputs[@]}"; do
+	echo Running test on image "${inputs[$index]}"
 	./ngsobel -i "test_in/${inputs[$index]}" -o "test_out/${outputs[$index]}"
 done
-set +x
+
+echo Running greyscale test on "${inputs[2]}"
+./ngsobel -i "test_in/${inputs[2]}" -o "test_out/p2_from_p3_greyscale.pgm" -g
+
+echo Running greyscale test on "${inputs[5]}"
+./ngsobel -i "test_in/${inputs[5]}" -o "test_out/p5_from_p6_greyscale.pgm" -g

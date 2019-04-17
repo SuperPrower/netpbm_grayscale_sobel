@@ -76,7 +76,9 @@ int main(int argc, char *argv[])
 	char *ofilename = NULL;
 	unsigned long n_threads = 1;
 
-	while ((c = getopt(argc, argv, "i:o:p:h")) != -1) {
+	uint8_t do_greyscale = 0;
+
+	while ((c = getopt(argc, argv, "i:o:p:gh")) != -1) {
 		switch (c) {
 		case 'i':
 			/* Man page does not state whether optarg must be
@@ -90,6 +92,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'p':
 			n_threads = strtoul(optarg, NULL, 10);
+			break;
+		case 'g':
+			do_greyscale = 1;
 			break;
 		case 'h':
 			print_usage(argv[0]);
@@ -122,6 +127,14 @@ int main(int argc, char *argv[])
 
 	netpbm_image_t image;
 	if (read_netpbm_file(ifilename, &image) != 0) {
+		return -1;
+	}
+
+	if (do_greyscale && netpbm_to_greyscale(&image) != 0) {
+		return -1;
+	}
+
+	if (netpbm_sobel(&image, 1) != 0) {
 		return -1;
 	}
 

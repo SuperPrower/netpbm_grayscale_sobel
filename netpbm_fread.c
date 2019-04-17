@@ -269,6 +269,8 @@ int read_netpbm_file(char *filename, netpbm_image_t *img)
 	while (cp < total_pixels) {
 		if (img->type == NETPBM_ASCII_BITMAP || img->type == NETPBM_ASCII_GREYMAP) {
 			// read image word by word
+			// TODO: expects spaces between numbers,
+			// which isn't true for P1
 			if (READ_PIXEL_WORD(ifile, img->maxval, &(img->data[cp])) != 0)
 				goto error;
 
@@ -301,7 +303,7 @@ int read_netpbm_file(char *filename, netpbm_image_t *img)
 				if (READ_BYTE(ifile, &byte) != 0) goto error;
 			}
 
-			img->data[cp] = ((byte >> (7 - bits_read)) & 1U) ? 1U : 0;
+			img->data[cp] = ((byte >> (7 - bits_read)) & 1U) ? 255U : 0;
 			column++;
 			bits_read++;
 
@@ -332,27 +334,6 @@ int read_netpbm_file(char *filename, netpbm_image_t *img)
 
 		cp++;
 	}
-
-	FILE *dump = fopen("bindump", "wb");
-	size_t bg = 1;
-	size_t lg = 1;
-
-	for (cp = 0; cp < total_pixels; cp++) {
-		putc(img->data[cp] + '0', dump);
-
-		if (bg % 32 == 0 && bg > 0) {
-			bg = 1;
-			putc('\n', dump);
-		} else bg++;
-
-		if (lg % 8 == 0 && lg > 0) {
-			lg = 1;
-			putc(' ', dump);
-		} else lg++;
-
-	}
-	fclose(dump);
-
 
 	fclose(ifile);
 	return 0;

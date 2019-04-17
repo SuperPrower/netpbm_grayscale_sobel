@@ -7,7 +7,7 @@ debug: CCFLAGS += -DDEBUG -g
 debug: ngsobel
 
 ngsobel: main.o libnetpbm_gs.a
-	$(CC) $(CCFLAGS) -o ngsobel main.o -L. -lnetpbm_gs
+	$(CC) $(CCFLAGS) -o ngsobel main.o -lm -L. -lnetpbm_gs
 
 main.o: main.c
 	$(CC) $(CCFLAGS) -c main.c
