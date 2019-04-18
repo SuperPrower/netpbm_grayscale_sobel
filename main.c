@@ -41,12 +41,12 @@
  * [ ] 1. необходимо реализовать базовые операции работы с файлами данного
  * формата: как его прочитать, как изменить, сохранить.
  * [x] Файл описываем структурой, память под матрицу выделяем динамически.
- * [ ] 2. Реализуем алгоритм преобразования изображения в черно-белое
- * [ ] 3. Реализуем оператор Собеля для получаемого черно-белого изображения
+ * [x] 2. Реализуем алгоритм преобразования изображения в черно-белое
+ * [x] 3. Реализуем оператор Собеля для получаемого черно-белого изображения
  * https://en.wikipedia.org/wiki/Sobel_operator
  * [ ] 4. Добавить поддержку использования оператора Собеля в несколько потоков
  * (thread) - количество задается в командной строке
- * [ ] 5. Выводим на экран время обработки изображения (нужен для сравнения
+ * [x] 5. Выводим на экран время обработки изображения (нужен для сравнения
  * времени обработки в зависимости от количества потоков)
  *
  * Пункты 1-5 подразумевают, что приложение может иметь простой консольный
@@ -66,9 +66,11 @@
 void print_usage(char *binary_name)
 {
 	printf("Usage: %s -i ifilename -o filename [-g] [-p n_threads] [-h]\n"
-		"-i, -o - input and output files. Required.\n"
-		"-g     - turn image to greyscale. Required for RGB images\n"
-		"-p     - split Sobel operator between n threads",
+		"\t-i\t- Input file name. Required.\n"
+		"\t-o\t- Output file name. Required.\n"
+		"\t-g\t- turn image to greyscale. Required for RGB images\n"
+		"\t-p\t- split Sobel operator between n threads\n"
+		"\t-h\t- show this message and exit",
 		binary_name
 	);
 }
@@ -82,10 +84,11 @@ int main(int argc, char *argv[])
 	char *ifilename = NULL;
 	char *ofilename = NULL;
 	unsigned long n_threads = 1;
+	unsigned long do_sobel = 1;
 
 	uint8_t do_greyscale = 0;
 
-	while ((c = getopt(argc, argv, "i:o:p:gh")) != -1) {
+	while ((c = getopt(argc, argv, "i:o:p:ghs:")) != -1) {
 		switch (c) {
 		case 'i':
 			/* Man page does not state whether optarg must be
@@ -103,6 +106,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'g':
 			do_greyscale = 1;
+			break;
+		case 's':
+			do_sobel = strtoul(optarg, NULL, 10);
 			break;
 		case 'h':
 			print_usage(argv[0]);
@@ -142,15 +148,17 @@ int main(int argc, char *argv[])
 		return -1;
 
 
-	clock_t start = clock(), diff;
+	if (do_sobel) {
+		clock_t start = clock(), diff;
 
-	if (netpbm_sobel(&image, n_threads) != 0)
-		return -1;
+		if (netpbm_sobel(&image, n_threads) != 0)
+			return -1;
 
-	diff = clock() - start;
+		diff = clock() - start;
 
-	int msec = diff * 1000 / CLOCKS_PER_SEC;
-	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
+		int msec = diff * 1000 / CLOCKS_PER_SEC;
+		printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
+	}
 
 	write_netpbm_file(ofilename, &image);
 

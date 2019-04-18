@@ -148,7 +148,7 @@ struct kernel_task {
 /**
  * @struct Data local to the worker thread
  */
-struct thread_info {
+struct worker_info {
 	struct kernel_task* task;
 
 	uint32_t n_threads;
@@ -157,7 +157,7 @@ struct thread_info {
 
 void *thread_task(void * arguments)
 {
-	struct thread_info *info = (struct thread_info *) arguments;
+	struct worker_info *info = (struct worker_info *) arguments;
 	struct kernel_task *task = (struct kernel_task *) info->task;
 	/* Sobel kernel components */
 	uint32_t x_kernel[] = {
@@ -254,22 +254,22 @@ int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads)
 		img->width, img->height
 	};
 
-	struct thread_info *t_info = (struct thread_info *)
-		malloc(sizeof(struct thread_info) * n_threads);
+	struct worker_info *w_info = (struct worker_info *)
+		malloc(sizeof(struct worker_info) * n_threads);
 
 	pthread_t *threads = (pthread_t *)
 		malloc(sizeof(pthread_t) * n_threads);
 
 	for (size_t t = 0; t < n_threads; t++) {
 		/* fill worker info */
-		t_info[t].n_threads = n_threads;
-		t_info[t].thread_id = t;
-		t_info[t].task = &task;
+		w_info[t].n_threads = n_threads;
+		w_info[t].thread_id = t;
+		w_info[t].task = &task;
 
 		if (pthread_create(
 			&threads[t], NULL,
 			thread_task,
-			(void*)(&t_info[t])
+			(void*)(&w_info[t])
 		) != 0) {
 			fprintf(stderr, "Unable to create thread %lu!\n", t);
 			return -1;
@@ -300,11 +300,28 @@ int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads)
 	}
 
 	free(threads);
-	free(t_info);
+	free(w_info);
 
 	free(p_data);
 
-	// TODO: normalize values up to maxval
+	/* Normalize data up to maxval */
+	/* XXX: Normalization results in low contrast, although really clean
+	 * picture. Since it only affects ASCII format, I'll just put a filter
+	 * in the output.
+	 */
+#if 0
+	uint32_t local_maxval = 0;
+
+	for (size_t cp = 0; cp < (img->height * img->width); cp++) {
+		if (img->data[cp] > local_maxval)
+			local_maxval = img->data[cp];
+	}
+
+	for (size_t cp = 0; cp < (img->height * img->width); cp++) {
+		double val = (double)(img->data[cp]) / (double)(local_maxval);
+		img->data[cp] = round(val * img->maxval);
+	}
+#endif
 
 	return 0;
 }

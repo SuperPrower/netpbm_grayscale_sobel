@@ -286,19 +286,35 @@ int read_netpbm_file(char *filename, netpbm_image_t *img)
 	img->data = (uint32_t *) malloc(sizeof(uint32_t *) * img->width * img->height);
 
 	uint32_t cp = 0;
+	// temp variable
+	uint32_t byte = 0;
+
 	// for P4
 	uint32_t column = 0;
-	uint32_t byte = 0;
 	uint32_t bits_read = 0;
 	uint32_t byte_needed = 1;
 
 	const uint32_t total_pixels = img->width * img->height;
 
 	while (cp < total_pixels) {
-		if (img->type == NETPBM_ASCII_BITMAP || img->type == NETPBM_ASCII_GREYMAP) {
+		if (img->type == NETPBM_ASCII_BITMAP) {
+			// read image digit by digit
+			/* FIXME
+			if (READ_BYTE(ifile, &byte) != 0)
+				goto error;
+			if (SKIP_WHITESPACE(ifile) != 0 && feof(ifile) == 0)
+				goto error;
+
+			img->data[cp] = byte - '0';
+			*/
+
+			// XXX: assumes whitelines between digits.
+			// GIMP, for example, not uses them.
+			if (READ_PIXEL_WORD(ifile, img->maxval, &(img->data[cp])) != 0)
+				goto error;
+
+		} else if (img->type == NETPBM_ASCII_GREYMAP) {
 			// read image word by word
-			// TODO: expects spaces between numbers,
-			// which isn't true for P1
 			if (READ_PIXEL_WORD(ifile, img->maxval, &(img->data[cp])) != 0)
 				goto error;
 

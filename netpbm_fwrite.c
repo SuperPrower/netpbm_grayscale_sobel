@@ -181,6 +181,10 @@ int write_netpbm_file(char *filename, netpbm_image_t *img)
 
 	while (cp < total_pixels) {
 		if (img->type == NETPBM_ASCII_BITMAP || img->type == NETPBM_ASCII_GREYMAP) {
+			// Prevent big values from Sobel from ruining output
+			if (img->data[cp] > img->maxval)
+				img->data[cp] = img->maxval;
+
 			WRITE_ASCII_NUMBER(img->data[cp]);
 			PUT_SPACE();
 
