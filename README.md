@@ -15,7 +15,10 @@ make DEBUG=1
 ./ngsobel -i test_in/p6_underwater_bmx_binary.ppm -g -o test_out/p5_from_p6_sobel.pgm -p 
 ```
 
+### Testing
+Run `tests.sh`
+
 ## Current Issues
 
 - [ ] P1 format reader expects whitespace-separated digits
-- [ ] Multithreading doesn't increase performance even on humongous data
+- [ ] Multithreading doesn't increase performance even on humongous data, quite the opposite - performance gets worse.
