@@ -151,8 +151,8 @@ struct kernel_task {
 struct worker_info {
 	struct kernel_task* task;
 
-	uint32_t n_threads;
-	uint32_t thread_id;
+	size_t i_start;
+	size_t i_end;
 };
 
 void *thread_task(void * arguments)
@@ -172,10 +172,7 @@ void *thread_task(void * arguments)
 		 1,  2,  1
 	};
 
-	for (size_t i = info->thread_id;
-		i < (task->d_width * task->d_height);
-		i+= info->n_threads
-	) {
+	for (size_t i = info->i_start; i < info->i_end; i++) {
 		uint32_t out_x = 0;
 		uint32_t out_y = 0;
 
@@ -260,11 +257,29 @@ int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads)
 	pthread_t *threads = (pthread_t *)
 		malloc(sizeof(pthread_t) * n_threads);
 
+	/* split the job between n threads */
+	uint32_t t_pixels = img->width * img->height;
+	/** minimal amount of pixels to be processed by thread */
+	size_t e = t_pixels / n_threads;
+	/** amount of threads that will take e+1 pixels */
+	size_t o = t_pixels % n_threads;
+
+	size_t ind = 0;
+
 	for (size_t t = 0; t < n_threads; t++) {
 		/* fill worker info */
-		w_info[t].n_threads = n_threads;
-		w_info[t].thread_id = t;
+		w_info[t].i_start = ind;
+		ind += e;
+		if (o > 0) {
+			o--;
+			ind += 1;
+
+		}
+		w_info[t].i_end = ind;
+
 		w_info[t].task = &task;
+
+		printf("Thread %lu : %lu - %lu\n", t, w_info[t].i_start, w_info[t].i_end);
 
 		if (pthread_create(
 			&threads[t], NULL,
@@ -274,6 +289,11 @@ int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads)
 			fprintf(stderr, "Unable to create thread %lu!\n", t);
 			return -1;
 		}
+	}
+
+	if (ind != t_pixels) {
+		printf("ALARM\n");
+		exit(EXIT_FAILURE);
 	}
 
 	for (size_t t = 0; t < n_threads; t++) {
