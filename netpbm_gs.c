@@ -33,6 +33,7 @@
 
 #include <errno.h>
 #include <math.h>
+#include <time.h>
 
 
 int netpbm_to_greyscale(netpbm_image_t *img)
@@ -96,10 +97,9 @@ int netpbm_to_greyscale(netpbm_image_t *img)
  * @returns 0 if no problem occured, -1 otherwise
  */
 int apply_kernel(
-		uint32_t *data_in,
-		uint32_t dw, uint32_t dh,
+		uint32_t *data_in, uint32_t dw, uint32_t dh,
 		uint32_t fx, uint32_t fy,
-		uint32_t *kernel, uint32_t kw, uint32_t kh,
+		const uint32_t *kernel, const uint32_t kw, const uint32_t kh,
 		uint32_t *out
 )
 {
@@ -135,7 +135,7 @@ int apply_kernel(
 }
 
 /**
- * @struct Data about image shared between worker threads
+ * @brief Data about image shared between worker threads
  */
 struct kernel_task {
 	uint32_t *p_data; /**< Padded data */
@@ -146,27 +146,31 @@ struct kernel_task {
 };
 
 /**
- * @struct Data local to the worker thread
+ * @brief Data local to the worker thread
  */
 struct worker_info {
-	struct kernel_task* task;
+	uint32_t *p_data; /**< Padded data */
+	uint32_t p_width, p_height;
+
+	uint32_t *dest; /**< image data */
+	uint32_t d_width, d_height;
 
 	size_t i_start;
 	size_t i_end;
 };
 
-void *thread_task(void * arguments)
+void *thread_task(void *arguments)
 {
 	struct worker_info *info = (struct worker_info *) arguments;
-	struct kernel_task *task = (struct kernel_task *) info->task;
+
 	/* Sobel kernel components */
-	uint32_t x_kernel[] = {
+	const uint32_t x_kernel[] = {
 		-1, 0, 1,
 		-2, 0, 2,
 		-1, 0, 1
 	};
 
-	uint32_t y_kernel[] = {
+	const uint32_t y_kernel[] = {
 		-1, -2, -1,
 		 0,  0,  0,
 		 1,  2,  1
@@ -176,9 +180,11 @@ void *thread_task(void * arguments)
 		uint32_t out_x = 0;
 		uint32_t out_y = 0;
 
-		if (apply_kernel(task->p_data,
-				task->p_width, task->p_height,
-				(i % task->d_width) + 1, (i / task->d_width) + 1,
+		// Add 1 to focus point coordinates to avoid padded edges
+
+		if (apply_kernel(info->p_data,
+				info->p_width, info->p_height,
+				(i % info->d_width) + 1, (i / info->d_width) + 1,
 				x_kernel, 3, 3,
 				&out_x
 		) != 0) {
@@ -186,9 +192,9 @@ void *thread_task(void * arguments)
 			exit(EXIT_FAILURE);
 		};
 
-		if (apply_kernel(task->p_data,
-				task->p_width, task->p_height,
-				(i % task->d_width) + 1, (i / task->d_width) + 1,
+		if (apply_kernel(info->p_data,
+				info->p_width, info->p_height,
+				(i % info->d_width) + 1, (i / info->d_width) + 1,
 				y_kernel, 3, 3,
 				&out_y
 		) != 0) {
@@ -198,9 +204,8 @@ void *thread_task(void * arguments)
 
 		uint32_t val = sqrt(out_x * out_x + out_y * out_y);
 
-		task->dest[i] = val;
+		info->dest[i] = val;
 	}
-
 
 	return NULL;
 }
@@ -243,14 +248,6 @@ int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads)
 		);
 	}
 
-	struct kernel_task task = {
-		p_data,
-		p_width, p_height,
-
-		img->data,
-		img->width, img->height
-	};
-
 	struct worker_info *w_info = (struct worker_info *)
 		malloc(sizeof(struct worker_info) * n_threads);
 
@@ -268,19 +265,29 @@ int netpbm_sobel(netpbm_image_t *img, unsigned long n_threads)
 
 	for (size_t t = 0; t < n_threads; t++) {
 		/* fill worker info */
-		w_info[t].i_start = ind;
-		ind += e;
+		size_t end = ind + e;
 		if (o > 0) {
 			o--;
-			ind += 1;
-
+			end += 1;
 		}
-		w_info[t].i_end = ind;
+		w_info[t] = (struct worker_info){
+			.p_data = p_data,
+			.p_width = p_width,
+			.p_height = p_height,
 
-		w_info[t].task = &task;
+			.dest = img->data,
+			.d_width = img->width,
+			.d_height = img->height,
+			.i_start = ind,
+			.i_end = end
+		};
+		ind = end;
 
+#if DEBUG
 		printf("Thread %lu : %lu - %lu\n", t, w_info[t].i_start, w_info[t].i_end);
+#endif
 
+		/* create thread */
 		if (pthread_create(
 			&threads[t], NULL,
 			thread_task,

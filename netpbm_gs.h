@@ -28,19 +28,21 @@
 
 #include <stdint.h>
 
+/**
+ * @enum Netpbm image file formats
+ */
 enum NETPBM_TYPE {
-	NETPBM_ASCII_BITMAP = 1,
-	NETPBM_ASCII_GREYMAP = 2,
-	NETPBM_ASCII_PIXMAP = 3,
-	NETPBM_BINARY_BITMAP = 4,
-	NETPBM_BINARY_GREYMAP = 5,
-	NETPBM_BINARY_PIXMAP = 6,
-	NETPBM_PAM = 7
+	NETPBM_ASCII_BITMAP = 1, /**< P1, ASCII bitmap */
+	NETPBM_ASCII_GREYMAP = 2, /**< P2, ASCII greymap */
+	NETPBM_ASCII_PIXMAP = 3, /**< P3, ASCII pixelmap */
+	NETPBM_BINARY_BITMAP = 4, /**< P4, Binary bitmap */
+	NETPBM_BINARY_GREYMAP = 5, /**< P5, Binary greymap */
+	NETPBM_BINARY_PIXMAP = 6, /**< P6, Binary pixelmap */
+	NETPBM_PAM = 7 /**< PAM Format */
 };
 
 #define NETPBM_TYPE_IS_ASCII(X) ((X) < (4))
 #define NETPBM_TYPE_IS_BINARY(X) ((X) > (3) && (X) < (7))
-
 
 #define NETPBM_RED(X) ((X) & 0xff)
 #define NETPBM_GREEN(X) (((X) >> 8) & 0xff)

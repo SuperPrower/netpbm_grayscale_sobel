@@ -21,4 +21,13 @@ Run `tests.sh`
 ## Current Issues
 
 - [ ] P1 format reader expects whitespace-separated digits
-- [ ] Multithreading doesn't increase performance even on humongous data, quite the opposite - performance gets worse.
+- [ ] No support for PAM (P7) format
+
+## Sources
+
+* [PBM ASCII](https://people.sc.fsu.edu/~jburkardt/data/pbma/pbma.html)
+* [PGM ASCII](https://people.sc.fsu.edu/~jburkardt/data/pgma/pgma.html)
+* [PPM ASCII](https://people.sc.fsu.edu/~jburkardt/data/ppma/ppma.html)
+* [PBM Binary](https://people.sc.fsu.edu/~jburkardt/data/pbmb/pbmb.html)
+* [PGM Binary](https://people.sc.fsu.edu/~jburkardt/data/pgmb/pgmb.html)
+* [PPM Binary](https://people.sc.fsu.edu/~jburkardt/data/ppmb/ppmb.html)

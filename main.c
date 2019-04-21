@@ -28,49 +28,16 @@
 #include <errno.h>
 #include <time.h>
 
-/*
- * TODO:
- * ЗАДАНИЕ ОС / Портирование
- * - Дано: графический формат ppm https://en.wikipedia.org/wiki/Netpbm_format
- *
- * Программа принимает на вход путь до файла ppm, и путь до выходного файла
- * (результата)
- * Программа пишется под Linux, на С, с использованием Posix
- *
- *
- * [ ] 1. необходимо реализовать базовые операции работы с файлами данного
- * формата: как его прочитать, как изменить, сохранить.
- * [x] Файл описываем структурой, память под матрицу выделяем динамически.
- * [x] 2. Реализуем алгоритм преобразования изображения в черно-белое
- * [x] 3. Реализуем оператор Собеля для получаемого черно-белого изображения
- * https://en.wikipedia.org/wiki/Sobel_operator
- * [ ] 4. Добавить поддержку использования оператора Собеля в несколько потоков
- * (thread) - количество задается в командной строке
- * [x] 5. Выводим на экран время обработки изображения (нужен для сравнения
- * времени обработки в зависимости от количества потоков)
- *
- * Пункты 1-5 подразумевают, что приложение может иметь простой консольный
- * интерфейс; Опционально можно реализовать графический интерфейс используя QT
- * с возможностью отображения изображения
- *
- * Вариант передачи:
- * - результат передаётся в виде ссылки на репозиторий размещённый на
- * github или в виде архива содержащего репозиторий с исходными кодами, а
- * также описание тестов (как проверить)
- *
- * Вариант запуска программы:
- * $ ./my_converter -i my_photo.ppm -r my_photo_sobel.ppm -p 10
- * Time of algorithm execution: 3.2 ms
- */
-
 void print_usage(char *binary_name)
 {
-	printf("Usage: %s -i ifilename -o filename [-g] [-p n_threads] [-h]\n"
+	printf("Usage: %s -i ifilename -o filename [-g] [-p n_threads] [-h] [-s value]\n"
 		"\t-i\t- Input file name. Required.\n"
 		"\t-o\t- Output file name. Required.\n"
 		"\t-g\t- turn image to greyscale. Required for RGB images\n"
 		"\t-p\t- split Sobel operator between n threads\n"
-		"\t-h\t- show this message and exit",
+		"\t-h\t- show this message and exit\n"
+		"\t-s\t- Apply Sobel operator to the image "
+		"if value is != 0. Enabled by default\n",
 		binary_name
 	);
 }
@@ -147,17 +114,27 @@ int main(int argc, char *argv[])
 	if (do_greyscale && netpbm_to_greyscale(&image) != 0)
 		return -1;
 
-
 	if (do_sobel) {
-		clock_t start = clock(), diff;
+		struct timespec start, finish;
+		clock_gettime(CLOCK_MONOTONIC, &start);
 
 		if (netpbm_sobel(&image, n_threads) != 0)
 			return -1;
 
-		diff = clock() - start;
+		clock_gettime(CLOCK_MONOTONIC, &finish);
 
-		int msec = diff * 1000 / CLOCKS_PER_SEC;
-		printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
+		time_t seconds = finish.tv_sec - start.tv_sec;
+		// Nanoseconds can go negative, since they are the remainder.
+		// Adjust for it here.
+		long int nanoseconds = finish.tv_nsec - start.tv_nsec;
+		while (nanoseconds < 0) {
+			// Compiler doesn't like the engineering notation here
+			nanoseconds += 1000000000;
+			--seconds;
+		}
+		// Decimals not used for more precise comparisons
+		printf("Sobel algorithm took %li seconds and %li nanoseconds\n", seconds, nanoseconds);
+
 	}
 
 	write_netpbm_file(ofilename, &image);
